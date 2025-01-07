@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocket Battle</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        canvas {
+            border: 2px solid black;
+            background-color: #ddd;
+        }
+
+        .controls {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <div class="controls">
+        <input type="text" id="codeInput" placeholder="Enter Code (4272)">
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const rocket = {
+            x: 100,
+            y: canvas.height / 2 - 25,
+            width: 50,
+            height: 20,
+            color: 'red',
+            speed: 5,
+        };
+
+        const target = {
+            x: canvas.width - 100,
+            y: Math.random() * (canvas.height - 50),
+            width: 50,
+            height: 50,
+            color: 'blue',
+        };
+
+        let bullets = [];
+        let score = 0;
+        let autoMode = false;
+
+        function drawRocket() {
+            ctx.fillStyle = rocket.color;
+            ctx.fillRect(rocket.x, rocket.y, rocket.width, rocket.height);
+        }
+
+        function drawTarget() {
+            ctx.fillStyle = target.color;
+            ctx.fillRect(target.x, target.y, target.width, target.height);
+        }
+
+        function drawBullets() {
+            bullets.forEach((bullet) => {
+                ctx.fillStyle = 'yellow';
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function updateRocket() {
+            if (autoMode) {
+                if (rocket.y + rocket.height / 2 < target.y + target.height / 2) {
+                    rocket.y += rocket.speed;
+                } else if (rocket.y + rocket.height / 2 > target.y + target.height / 2) {
+                    rocket.y -= rocket.speed;
+                }
+            }
+        }
+
+        function updateBullets() {
+            bullets = bullets.filter((bullet) => bullet.x < canvas.width);
+            bullets.forEach((bullet) => {
+                bullet.x += bullet.speed;
+                if (
+                    bullet.x + bullet.width > target.x &&
+                    bullet.y < target.y + target.height &&
+                    bullet.y + bullet.height > target.y
+                ) {
+                    score++;
+                    target.y = Math.random() * (canvas.height - 50);
+                    bullet.hit = true;
+                }
+            });
+
+            bullets = bullets.filter((bullet) => !bullet.hit);
+        }
+
+        function shoot() {
+            bullets.push({
+                x: rocket.x + rocket.width,
+                y: rocket.y + rocket.height / 2 - 5,
+                width: 10,
+                height: 10,
+                speed: 10,
+            });
+        }
+
+        function autoShoot() {
+            if (
+                Math.abs(rocket.y + rocket.height / 2 - (target.y + target.height / 2)) < rocket.speed
+            ) {
+                shoot();
+            }
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 20);
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawRocket();
+            drawTarget();
+            drawBullets();
+            drawScore();
+            updateRocket();
+            updateBullets();
+            if (autoMode) {
+                autoShoot();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('codeInput').addEventListener('input', (e) => {
+            if (e.target.value === '4272') {
+                autoMode = true;
+                e.target.value = ''; // Clear code input
+            }
+        });
+
+        // Add manual controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                rocket.y = Math.max(0, rocket.y - rocket.speed); // Move up
+            } else if (e.key === 'ArrowDown') {
+                rocket.y = Math.min(canvas.height - rocket.height, rocket.y + rocket.speed); // Move down
+            } else if (e.key === ' ') {
+                shoot(); // Shoot bullet
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
